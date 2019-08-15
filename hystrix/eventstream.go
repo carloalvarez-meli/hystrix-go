@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/afex/hystrix-go/hystrix/rolling"
+	"github.com/carloalvarez-meli/hystrix-go/hystrix/rolling"
 )
 
 const (
@@ -47,8 +47,8 @@ func (sh *StreamHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, "Streaming unsupported!", http.StatusInternalServerError)
 		return
 	}
-	events := sh.register(req)
-	defer sh.unregister(req)
+	events := sh.Register(req)
+	defer sh.Unregister(req)
 
 	notify := rw.(http.CloseNotifier).CloseNotify()
 
@@ -202,7 +202,7 @@ func (sh *StreamHandler) writeToRequests(eventBytes []byte) error {
 	return nil
 }
 
-func (sh *StreamHandler) register(req *http.Request) <-chan []byte {
+func (sh *StreamHandler) Register(req *http.Request) <-chan []byte {
 	sh.mu.RLock()
 	events, ok := sh.requests[req]
 	sh.mu.RUnlock()
@@ -217,7 +217,7 @@ func (sh *StreamHandler) register(req *http.Request) <-chan []byte {
 	return events
 }
 
-func (sh *StreamHandler) unregister(req *http.Request) {
+func (sh *StreamHandler) Unregister(req *http.Request) {
 	sh.mu.Lock()
 	delete(sh.requests, req)
 	sh.mu.Unlock()

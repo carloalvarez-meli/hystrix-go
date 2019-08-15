@@ -14,7 +14,7 @@ type CircuitBreaker struct {
 	open                   bool
 	forceOpen              bool
 	mutex                  *sync.RWMutex
-	openedOrLastTestedTime int64
+	OpenedOrLastTestedTime int64
 
 	executorPool *executorPool
 	metrics      *metricExchange
@@ -123,13 +123,9 @@ func (circuit *CircuitBreaker) allowSingleTest() bool {
 	defer circuit.mutex.RUnlock()
 
 	now := time.Now().UnixNano()
-	openedOrLastTestedTime := atomic.LoadInt64(&circuit.openedOrLastTestedTime)
-	if circuit.open && now > openedOrLastTestedTime+getSettings(circuit.Name).SleepWindow.Nanoseconds() {
-		swapped := atomic.CompareAndSwapInt64(&circuit.openedOrLastTestedTime, openedOrLastTestedTime, now)
-		if swapped {
-			log.Printf("hystrix-go: allowing single test to possibly close circuit %v", circuit.Name)
-		}
-		return swapped
+	OpenedOrLastTestedTime := atomic.LoadInt64(&circuit.OpenedOrLastTestedTime)
+	if circuit.open && now > OpenedOrLastTestedTime+getSettings(circuit.Name).SleepWindow.Nanoseconds() {
+		return true
 	}
 
 	return false
@@ -145,7 +141,7 @@ func (circuit *CircuitBreaker) setOpen() {
 
 	log.Printf("hystrix-go: opening circuit %v", circuit.Name)
 
-	circuit.openedOrLastTestedTime = time.Now().UnixNano()
+	circuit.OpenedOrLastTestedTime = time.Now().UnixNano()
 	circuit.open = true
 }
 
